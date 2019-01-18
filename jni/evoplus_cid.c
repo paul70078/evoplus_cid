@@ -7,9 +7,10 @@
 #include <unistd.h>
 #include "mmc.h"
 
+#define MMC_CMD_BLKL 16  
 #define MMC_CMD_LOCK 42  
 
-int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, char flags, char const*const data, char len) {
+int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const*const data, char len) {
 	int ret = 0;
 	struct mmc_ioc_cmd idata = {0};
 
@@ -29,6 +30,9 @@ int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, char flags, char cons
 
 int mmc_change_lock(int fd, int lock, char const*const password) {
 	char data[500];
+
+	//set block size
+	mmc_cmd(fd, MMC_CMD_BLKL, 512, MMC_RSP_R1 | MMC_RSP_SPI_R1B, 0, 0);
 	
 	char len = strlen(password);
 	
@@ -39,11 +43,11 @@ int mmc_change_lock(int fd, int lock, char const*const password) {
 	data[len+3] = 0xff;
 	data[len+4] = 0xff;
 
-	int ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1, data, len+5);	//set password
+	int ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1B, data, len+5);	//set password
 
 	if (ret && lock) {
 		data[1] = 0x04;
-		mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1, data, len+5);	//set password
+		mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1B, data, len+5);	//set password
 	}
 
 	if (!ret) {
