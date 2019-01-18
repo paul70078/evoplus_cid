@@ -68,14 +68,16 @@ int main(int argc, const char **argv) {
 	// open device
 	fd = open(argv[2], O_RDWR);
 	if (fd < 0){
-		printf("Unable to open device %s\n", argv[1]);
+		printf("Unable to open device %s\n", argv[2]);
 		return -1;
 	}
 
 	//lock/unlock
-	if (strcmp(argv[1], "lock")) {
+	if (strcmp(argv[1], "lock")) {\
+		printf("trying to lock...");
 		mmc_change_lock(fd, 1, argv[3]);
-	} else if (strcmp(argv[2], "lock")) {
+	} else if (strcmp(argv[1], "unlock")) {
+		printf("trying to unlock...");
 		mmc_change_lock(fd, 0, argv[3]);
 	} else {
 		printf("Unknown parameter\n");
