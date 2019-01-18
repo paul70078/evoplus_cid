@@ -73,11 +73,11 @@ int main(int argc, const char **argv) {
 	}
 
 	//lock/unlock
-	if (strcmp(argv[1], "lock")) {\
-		printf("trying to lock...");
+	if (strcmp(argv[1], "lock") == 0) {\
+		printf("trying to lock...\n");
 		mmc_change_lock(fd, 1, argv[3]);
-	} else if (strcmp(argv[1], "unlock")) {
-		printf("trying to unlock...");
+	} else if (strcmp(argv[1], "unlock") == 0) {
+		printf("trying to unlock...\n");
 		mmc_change_lock(fd, 0, argv[3]);
 	} else {
 		printf("Unknown parameter\n");
