@@ -32,7 +32,12 @@ int mmc_change_lock(int fd, int lock, char const*const password) {
 	char data[500];
 
 	//set block size
-	mmc_cmd(fd, MMC_CMD_BLKL, 512, MMC_RSP_R1 | MMC_RSP_SPI_R1B, 0, 0);
+	int ret = mmc_cmd(fd, MMC_CMD_BLKL, 512, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0);
+
+	if (!ret) {
+		printf("set block length failed\n");
+		return ret;
+	}
 	
 	char len = strlen(password);
 	
@@ -43,11 +48,11 @@ int mmc_change_lock(int fd, int lock, char const*const password) {
 	data[len+3] = 0xff;
 	data[len+4] = 0xff;
 
-	int ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1B, data, len+5);	//set password
+	ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, len+5);	//set password
 
 	if (ret && lock) {
 		data[1] = 0x04;
-		mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1B, data, len+5);	//set password
+		mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, len+5);	//set password
 	}
 
 	if (!ret) {
