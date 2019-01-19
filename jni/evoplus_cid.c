@@ -19,9 +19,12 @@ int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const
 	idata.opcode = opcode;
 	idata.arg = arg;
 	idata.flags = flags;
-	idata.blksz = len;
-	idata.blocks = 1;
-	mmc_ioc_cmd_set_data(idata, data);
+
+	if (data && len) {
+		idata.blksz = len;
+		idata.blocks = 1;
+		mmc_ioc_cmd_set_data(idata, data);
+	}
 
 	ret = ioctl(fd, MMC_IOC_CMD, &idata);
 
@@ -34,8 +37,8 @@ int mmc_change_lock(int fd, int lock, char const*const password) {
 	//set block size
 	int ret = mmc_cmd(fd, MMC_CMD_BLKL, 512, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0);
 
-	if (!ret) {
-		printf("set block length failed\n");
+	if (ret) {
+		printf("set block length failed: %d\n", ret);
 		return ret;
 	}
 	
@@ -56,7 +59,7 @@ int mmc_change_lock(int fd, int lock, char const*const password) {
 	}
 
 	if (!ret) {
-		printf("lock/unlock failed\n");
+		printf("lock/unlock failed: %d\n", ret);
 	}
 
 	return ret;
