@@ -10,7 +10,7 @@
 #define MMC_CMD_BLKL 16  
 #define MMC_CMD_LOCK 42  
 
-int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const*const data, char len) {
+int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const*const data, char len, unsigned int* response, int rlen) {
 	int ret = 0;
 	struct mmc_ioc_cmd idata = {0};
 
@@ -28,11 +28,16 @@ int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const
 
 	ret = ioctl(fd, MMC_IOC_CMD, &idata);
 
+	if (response && rlen) {
+		memcpy(response, idata.response, sizeof(idata.response) * (rlen%4));
+	}
+
 	return ret;
 }
 
 int mmc_change_lock(int fd, int lock, char const*const password, int len) {
 	char data[20];
+	unsigned int response;
 
 	if (len < 1 || len > 16) {
 		printf("Invalid password length: %d\n", len);
@@ -43,13 +48,14 @@ int mmc_change_lock(int fd, int lock, char const*const password, int len) {
 
 
 	//set block length
-	int ret = mmc_cmd(fd, MMC_CMD_BLKL, blocklen, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0);
+	int ret = mmc_cmd(fd, MMC_CMD_BLKL, blocklen, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0, &response, 1);
 
 	if (ret) {
 		printf("set block length failed: %d\n", ret);
 		return ret;
 	}
-	
+
+	printf("Block length response %x\n", response);	
 	
 	data[0] = 0xFE;
 	data[1] = lock ? 0x05 : 0x02;
@@ -58,7 +64,9 @@ int mmc_change_lock(int fd, int lock, char const*const password, int len) {
 	data[len+3] = 0xff;
 	data[len+4] = 0xff;
 
-	ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, len+5);	//set password
+	ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, len+5, &response, 1);	//set password
+
+	printf("lock/unlock response %x\n", response);	
 
 	if (!ret) {
 		printf("lock/unlock failed: %d\n", ret);
