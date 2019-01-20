@@ -127,6 +127,12 @@ int main(int argc, const char **argv) {
 	char password[100];
 	int len = readHex(argv[3], password, 100);
 
+	printf("Password (len = %i): ", len);
+	for (int i = 0; i < len; i++) {
+		printf("%2.2x", password[i]);
+	}
+	printf("\n");
+
 	//lock/unlock
 	if (strcmp(argv[1], "lock") == 0) {\
 		printf("trying to lock...\n");
