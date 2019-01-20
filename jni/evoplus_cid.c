@@ -7,10 +7,10 @@
 #include <unistd.h>
 #include "mmc.h"
 
-#define MMC_CMD_BLKL 16  
-#define MMC_CMD_LOCK 42  
+#define MMC_CMD_BLKL 16
+#define MMC_CMD_LOCK 42
 
-int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const*const data, char len, unsigned int* response, int rlen) {
+int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const*const data, unsigned int len, unsigned int* response, int rlen) {
 	int ret = 0;
 	struct mmc_ioc_cmd idata = {0};
 
@@ -36,7 +36,7 @@ int mmc_cmd(int fd, unsigned int opcode, unsigned int arg, int flags, char const
 }
 
 int mmc_change_lock(int fd, int lock, char const*const password, int len) {
-	char data[20];
+	char data[512];
 	unsigned int response;
 
 	if (len < 1 || len > 16) {
@@ -44,27 +44,24 @@ int mmc_change_lock(int fd, int lock, char const*const password, int len) {
 		return 0;
 	}
 
-	int blocklen = len + 2;
-
-
 	//set block length
-	int ret = mmc_cmd(fd, MMC_CMD_BLKL, blocklen, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0, &response, 1);
+	int ret = mmc_cmd(fd, MMC_CMD_BLKL, 512, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_AC, 0, 0, &response, 1);
 
 	if (ret) {
 		printf("set block length failed: %d\n", ret);
 		return ret;
 	}
 
-	printf("Block length response %x\n", response);	
+	printf("Block length response %x\n", response);
+
+	memset(data, 0xff, 512);
 	
 	data[0] = 0xFE;
 	data[1] = lock ? 0x05 : 0x02;
 	data[2] = len;
 	memcpy(&(data[3]), password, len);
-	data[len+3] = 0xff;
-	data[len+4] = 0xff;
 
-	ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, len+5, &response, 1);	//set password
+	ret = mmc_cmd(fd, MMC_CMD_LOCK, 0, MMC_RSP_R1 | MMC_RSP_SPI_R1 | MMC_CMD_ADTC, data, 512, &response, 1);	//set password
 
 	printf("lock/unlock response %x\n", response);	
 
